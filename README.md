@@ -1,2 +1,2 @@
 # gokenizer
- A language-agnostic tokenizer written in Go
+ A Lua tokenizer written in Go
