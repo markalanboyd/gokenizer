@@ -1,4 +1,4 @@
-package main
+package gokenizer
 
 func rIsDelimiter(r rune) bool {
 	delimiters := []rune{

@@ -1,4 +1,4 @@
-package main
+package gokenizer
 
 import "regexp"
 
@@ -49,6 +49,13 @@ func isDelimiter(s string) bool {
 		".", ",", ";", ":",
 	}
 	return matchesAny(s, delimiters)
+}
+
+func isConcatOperator(s string, i int) bool {
+	if i+1 < len(s) {
+		return s[i:i+2] == ".."
+	}
+	return false
 }
 
 func isStringLiteral(s string) bool {

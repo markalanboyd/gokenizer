@@ -1,14 +1,13 @@
-package main
+package gokenizer
 
 import (
 	"fmt"
 )
 
-// Types
-
-type token struct {
-	T   string
-	Val string
+// Token represents a lexical token, which consists of a type (T) and a corresponding value (V). The type (T) indicates the category or classification of the token, such as "Identifier", "Keyword", "BinaryOperator", "StringLiteral", etc. The value (V) provides the specific content or data associated with the token, such as the actual identifier name, keyword text, operator symbol, or string literal contents.
+type Token struct {
+	T string
+	V string
 }
 
 // Generics
@@ -32,10 +31,10 @@ func lastOf[T any](s []T) T {
 
 // Util Functions
 
-func assignTokenType(tokens []token) {
+func assignTokenType(tokens []Token) {
 	for i := range tokens {
 		var t string
-		v := tokens[i].Val
+		v := tokens[i].V
 		switch {
 		case isKeyword(v):
 			t = "Keyword"
@@ -64,42 +63,44 @@ func assignTokenType(tokens []token) {
 	}
 }
 
-func stringToTokenVal(s string) []token {
-	tokens := []token{}
-	var rSlice []rune
-	var insideStringLiteral, insideNumericLiteral, insideComment, insideMultiLineComment bool
+func stringToTokenVal(s string) []Token {
+	tokens := []Token{}
+	var rS []rune
+	var insideStringLiteral, insideNumericLiteral, insideComment, insideMultiLineComment, skipNext bool
 	var stringDelimiter rune
 
 	for i, r := range s {
 		switch {
 		// STRING LITERAL //
+		case skipNext:
+			skipNext = false
 		case !insideStringLiteral && !insideMultiLineComment && rIsQuoteMark(r):
 			insideStringLiteral = true
 			stringDelimiter = r
-			rSlice = append(rSlice, r)
+			rS = append(rS, r)
 		case insideStringLiteral && r == stringDelimiter:
 			insideStringLiteral = false
-			rSlice = append(rSlice, r)
-			tokens = append(tokens, token{Val: string(rSlice)})
-			rSlice = rSlice[:0]
+			rS = append(rS, r)
+			tokens = append(tokens, Token{V: string(rS)})
+			rS = rS[:0]
 		case insideStringLiteral:
-			rSlice = append(rSlice, r)
+			rS = append(rS, r)
 
 		// NUMERIC LITERAL //
 		case !insideNumericLiteral && rIsInteger(r):
 			insideNumericLiteral = true
-			rSlice = append(rSlice, r)
+			rS = append(rS, r)
 		case insideNumericLiteral && !rIsNumComponent(r):
 			insideNumericLiteral = false
-			tokens = append(tokens, token{Val: string(rSlice)})
-			rSlice = rSlice[:0]
+			tokens = append(tokens, Token{V: string(rS)})
+			rS = rS[:0]
 		case insideNumericLiteral:
-			rSlice = append(rSlice, r)
+			rS = append(rS, r)
 
-		// SINGLE-LINE COMMENT //
-		case !insideComment && rIsDash(r) && rIsDash(lastOf(rSlice)):
+		// COMMENT //
+		case !insideComment && rIsDash(r) && rIsDash(lastOf(rS)):
 			insideComment = true
-			rSlice = rSlice[:len(rSlice)-1]
+			rS = rS[:len(rS)-1]
 			continue
 		case insideComment && rIsNewline(r):
 			insideComment = false
@@ -114,37 +115,41 @@ func stringToTokenVal(s string) []token {
 		case insideMultiLineComment:
 			continue
 
-		// TODO Fix concat op
 		// NORMAL TOKENIZATION AND DELIMITERS //
 		default:
-			if rIsDelimiter(r) && len(rSlice) > 0 {
-				tokens = append(tokens, token{Val: string(rSlice)})
-				rSlice = rSlice[:0]
-			}
-			if !rIsWhiteSpace(r) && !rIsDelimiter(r) {
-				rSlice = append(rSlice, r)
-			} else if rIsDelimiter(r) && !rIsWhiteSpace(r) {
-				tokens = append(tokens, token{Val: string(r)})
+			switch {
+			case isConcatOperator(s, i):
+				tokens = append(tokens, Token{V: ".."})
+				skipNext = true
+			case rIsDelimiter(r) && len(rS) > 0:
+				tokens = append(tokens, Token{V: string(rS)})
+				rS = rS[:0]
+			case !rIsWhiteSpace(r) && !rIsDelimiter(r):
+				rS = append(rS, r)
+			case rIsDelimiter(r) && !rIsWhiteSpace(r):
+				tokens = append(tokens, Token{V: string(r)})
 			}
 		}
 	}
 
 	// FINAL TOKEN //
-	if len(rSlice) > 0 {
-		tokens = append(tokens, token{Val: string(rSlice)})
+	if len(rS) > 0 {
+		tokens = append(tokens, Token{V: string(rS)})
 	}
 
 	return tokens
 }
 
-func stringToTokens(s string) []token {
+func stringToTokens(s string) []Token {
 	tokens := stringToTokenVal(s)
 	assignTokenType(tokens)
 	return tokens
 }
 
-func printTokens(tokens []token) {
+// PrintTokens pretty prints tokens to the console
+func PrintTokens(tokens []Token) {
 	for _, token := range tokens {
-		fmt.Printf("%s: %s\n", token.T, token.Val)
+		pad := 19 - len(token.T)
+		fmt.Printf("T: %s %*s V:%s\n", token.T, pad, "", token.V)
 	}
 }
