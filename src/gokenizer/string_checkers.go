@@ -19,6 +19,10 @@ func isParenthesis(s string) bool {
 	return matchesAny(s, parens)
 }
 
+// func isUnaryOperator(s string) bool {
+
+// }
+
 func isBracket(s string) bool {
 	brackets := []string{
 		"[", "]",
@@ -52,7 +56,7 @@ func isDelimiter(s string) bool {
 }
 
 func isConcatOperator(s string, i int) bool {
-	if i+1 < len(s) {
+	if i+3 <= len(s) {
 		return s[i:i+2] == ".."
 	}
 	return false

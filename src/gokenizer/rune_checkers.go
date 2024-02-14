@@ -7,6 +7,7 @@ func rIsDelimiter(r rune) bool {
 		'[', ']', // Square brackets
 		'{', '}', // Curly braces
 		'.', ',', ':', ';', // Punctuation marks
+		'#', // Length operator
 	}
 	return matchesAny(r, delimiters)
 }
@@ -24,6 +25,13 @@ func rIsDash(r rune) bool {
 
 func rIsNewline(r rune) bool {
 	return r == '\n'
+}
+
+func rIsPunctuation(r rune) bool {
+	punctuation := []rune{
+		'.', ',', ':', ';', '#',
+	}
+	return matchesAny(r, punctuation)
 }
 
 func rIsNumComponent(r rune) bool {

@@ -94,6 +94,9 @@ func stringToTokenVal(s string) []Token {
 			insideNumericLiteral = false
 			tokens = append(tokens, Token{V: string(rS)})
 			rS = rS[:0]
+			if rIsPunctuation(r) {
+				tokens = append(tokens, Token{V: string(r)})
+			}
 		case insideNumericLiteral:
 			rS = append(rS, r)
 
@@ -118,16 +121,21 @@ func stringToTokenVal(s string) []Token {
 		// NORMAL TOKENIZATION AND DELIMITERS //
 		default:
 			switch {
-			case isConcatOperator(s, i):
-				tokens = append(tokens, Token{V: ".."})
-				skipNext = true
-			case rIsDelimiter(r) && len(rS) > 0:
-				tokens = append(tokens, Token{V: string(rS)})
-				rS = rS[:0]
-			case !rIsWhiteSpace(r) && !rIsDelimiter(r):
+			case rIsDelimiter(r):
+				if isConcatOperator(s, i) {
+					tokens = append(tokens, Token{V: ".."})
+					skipNext = true
+					continue
+				}
+				if len(rS) > 0 {
+					tokens = append(tokens, Token{V: string(rS)})
+					rS = rS[:0]
+				}
+				if rIsPunctuation(r) {
+					tokens = append(tokens, Token{V: string(r)})
+				}
+			default:
 				rS = append(rS, r)
-			case rIsDelimiter(r) && !rIsWhiteSpace(r):
-				tokens = append(tokens, Token{V: string(r)})
 			}
 		}
 	}
@@ -148,8 +156,8 @@ func stringToTokens(s string) []Token {
 
 // PrintTokens pretty prints tokens to the console
 func PrintTokens(tokens []Token) {
-	for _, token := range tokens {
+	for i, token := range tokens {
 		pad := 19 - len(token.T)
-		fmt.Printf("T: %s %*s V:%s\n", token.T, pad, "", token.V)
+		fmt.Printf("%v T: %s %*s V:%s\n", i, token.T, pad, "", token.V)
 	}
 }
